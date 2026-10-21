@@ -11,9 +11,6 @@
 
 namespace App\Badge\Model;
 
-/**
- * Interface BadgeInterface.
- */
 interface BadgeInterface
 {
     public function getSubject(): string;
@@ -22,7 +19,9 @@ interface BadgeInterface
 
     public function getHexColor(): string;
 
+    public function getStyle(): string;
+
     public function getFormat(): string;
 
-    public function __toString();
+    public function __toString(): string;
 }

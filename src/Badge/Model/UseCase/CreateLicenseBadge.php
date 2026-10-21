@@ -11,33 +11,33 @@
 
 namespace App\Badge\Model\UseCase;
 
+use App\Badge\Model\Badge;
 use App\Badge\Model\CacheableBadge;
 use App\Badge\Model\Package;
-use InvalidArgumentException;
 
 /**
- * Class CreateLicenseBadge
  * Create the 'license' image using a generator `Poser`.
  */
-class CreateLicenseBadge extends BaseCreatePackagistImage
+final class CreateLicenseBadge extends BaseCreatePackagistImage
 {
-    private const COLOR = '428F7E';
-    private const SUBJECT = 'license';
-    private const TEXT_NO_LICENSE = 'no';
+    private const string COLOR = '428F7E';
+    private const string SUBJECT = 'license';
+    private const string TEXT_NO_LICENSE = 'no';
 
-    private const TTL_DEFAULT_MAXAGE = CacheableBadge::TTL_ONE_HOUR;
-    private const TTL_DEFAULT_SMAXAGE = CacheableBadge::TTL_ONE_HOUR;
+    private const int TTL_DEFAULT_MAXAGE = CacheableBadge::TTL_ONE_HOUR;
+    private const int TTL_DEFAULT_SMAXAGE = CacheableBadge::TTL_ONE_HOUR;
 
     /**
-     * @throws InvalidArgumentException
+     * @throws \InvalidArgumentException
      */
-    public function createLicenseBadge(string $repository, string $format = 'svg'): CacheableBadge
+    public function createLicenseBadge(string $repository, string $format = Badge::DEFAULT_FORMAT, string $style = Badge::DEFAULT_STYLE): CacheableBadge
     {
         return $this->createBadgeFromRepository(
             $repository,
             self::SUBJECT,
             self::COLOR,
             $format,
+            $style,
             null,
             self::TTL_DEFAULT_MAXAGE,
             self::TTL_DEFAULT_SMAXAGE

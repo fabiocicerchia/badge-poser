@@ -16,25 +16,21 @@ use Packagist\Api\Result\Result as PackagistResult;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Attribute\Route;
 
-/**
- * Class PackagistController.
- */
-class PackagistController extends AbstractController
+final class PackagistController extends AbstractController
 {
+    #[Route('/search_packagist', name: 'search_packagist', methods: 'GET')]
     public function search(Request $request, PackagistClient $packagistClient): JsonResponse
     {
         $responseContent = [];
-        $packageName = $request->query->get('name');
-        $max = $request->query->getInt('max', 10);
+        $packageName = (string) $request->query->get('name');
+        $pages = $request->query->getInt('pages', 1);
 
-        $packagistResponse = $packagistClient->search($packageName);
+        $packagistResponse = $packagistClient->search($packageName, [], $pages);
 
         /** @var PackagistResult $package */
-        foreach ($packagistResponse as $num => $package) {
-            if ($num >= $max) {
-                break;
-            }
+        foreach ($packagistResponse as $package) {
             $responseContent[] = ['id' => $package->getName(), 'description' => $package->getDescription()];
         }
 

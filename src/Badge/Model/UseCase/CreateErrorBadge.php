@@ -15,48 +15,44 @@ use App\Badge\Model\Badge;
 use App\Badge\Model\BadgeInterface;
 use App\Badge\Model\CacheableBadge;
 use GuzzleHttp\Exception\BadResponseException;
-use InvalidArgumentException;
-use Throwable;
-use UnexpectedValueException;
 
 /**
- * Class CreateErrorBadge
  * Create the 'error' badge with the standard Font and standard Image.
  */
-class CreateErrorBadge
+final class CreateErrorBadge
 {
-    private const COLOR = 'e05d44';
-    private const ERROR_TEXT_GENERIC = 'generic';
-    private const ERROR_TEXT_CLIENT_EXCEPTION = 'connection';
-    private const ERROR_TEXT_CLIENT_BAD_RESPONSE = 'not found?';
+    private const string COLOR = 'e05d44';
+    private const string ERROR_TEXT_GENERIC = 'generic';
+    private const string ERROR_TEXT_CLIENT_EXCEPTION = 'connection';
+    private const string ERROR_TEXT_CLIENT_BAD_RESPONSE = 'not found?';
 
-    private const TTL_DEFAULT_MAXAGE = CacheableBadge::TTL_NO_CACHE;
-    private const TTL_DEFAULT_SMAXAGE = CacheableBadge::TTL_NO_CACHE;
+    private const int TTL_DEFAULT_MAXAGE = CacheableBadge::TTL_NO_CACHE;
+    private const int TTL_DEFAULT_SMAXAGE = CacheableBadge::TTL_NO_CACHE;
 
     /**
-     * @throws InvalidArgumentException
+     * @throws \InvalidArgumentException
      */
-    public function createErrorBadge(Throwable $throwable, string $format): CacheableBadge
+    public function createErrorBadge(\Throwable $throwable, string $format = Badge::DEFAULT_FORMAT, string $style = Badge::DEFAULT_STYLE): CacheableBadge
     {
         return new CacheableBadge(
-            $this->createBadge($throwable, $format),
+            $this->createBadge($throwable, $format, $style),
             self::TTL_DEFAULT_MAXAGE,
             self::TTL_DEFAULT_SMAXAGE
         );
     }
 
     /**
-     * @throws InvalidArgumentException
+     * @throws \InvalidArgumentException
      */
-    protected function createBadge(Throwable $throwable, string $format): BadgeInterface
+    private function createBadge(\Throwable $throwable, string $format = Badge::DEFAULT_FORMAT, string $style = Badge::DEFAULT_STYLE): BadgeInterface
     {
         $status = self::ERROR_TEXT_GENERIC;
         if ($throwable instanceof BadResponseException) {
             $status = self::ERROR_TEXT_CLIENT_BAD_RESPONSE;
-        } elseif ($throwable instanceof UnexpectedValueException) {
+        } elseif ($throwable instanceof \UnexpectedValueException) {
             $status = self::ERROR_TEXT_CLIENT_EXCEPTION;
         }
 
-        return new Badge((string) $throwable, $status, self::COLOR, $format);
+        return new Badge((string) $throwable, $status, self::COLOR, $format, $style);
     }
 }

@@ -8,27 +8,21 @@ use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 
-class CircleCiClient implements CircleCiClientInterface
+final readonly class CircleCiClient implements CircleCiClientInterface
 {
-    protected UrlGeneratorInterface $router;
-
-    protected HttpClientInterface $httpClient;
-
-    protected string $circleToken;
-
-    public function __construct(UrlGeneratorInterface $router, HttpClientInterface $httpClient, string $circleToken)
-    {
-        $this->router = $router;
-        $this->httpClient = $httpClient;
-        $this->circleToken = $circleToken;
+    public function __construct(
+        private UrlGeneratorInterface $router,
+        private HttpClientInterface $httpClient,
+        private string $circleToken,
+    ) {
     }
 
     /**
      * @throws TransportExceptionInterface
      */
-    public function getBuilds(string $repository, string $branch = 'master'): ResponseInterface
+    public function health(): ResponseInterface
     {
-        $circleCiApiUrl = $this->router->generate('circleci_api', ['repository' => $repository, 'branch' => \urlencode($branch)]);
+        $circleCiApiUrl = $this->router->generate('circleci_api_health');
 
         return $this->httpClient->request(
             Request::METHOD_GET,
@@ -36,10 +30,29 @@ class CircleCiClient implements CircleCiClientInterface
             [
                 'headers' => [
                     'Accept' => 'application/json',
-                    'Content-type' => 'application/json',
+                    'Circle-Token' => $this->circleToken,
+                ],
+            ]
+        );
+    }
+
+    /**
+     * @throws TransportExceptionInterface
+     */
+    public function getBuilds(string $repository, string $branch = 'master'): ResponseInterface
+    {
+        $circleCiApiUrl = $this->router->generate('circleci_api_repository', ['repository' => $repository, 'branch' => \urlencode($branch)]);
+
+        return $this->httpClient->request(
+            Request::METHOD_GET,
+            $circleCiApiUrl,
+            [
+                'headers' => [
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                    'Circle-Token' => $this->circleToken,
                 ],
                 'query' => [
-                    'circle-token' => $this->circleToken,
                     'filter' => 'completed',
                     'limit' => '1',
                 ],

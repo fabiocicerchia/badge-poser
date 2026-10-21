@@ -11,24 +11,23 @@
 
 namespace App\Badge\Model\UseCase;
 
+use App\Badge\Model\Badge;
 use App\Badge\Model\CacheableBadge;
 use App\Badge\Model\Package;
 use App\Badge\Model\PackageRepositoryInterface;
 use App\Badge\Service\NormalizerInterface;
 use App\Badge\Service\TextNormalizer;
-use InvalidArgumentException;
 
 /**
- * Class CreateDownloadsBadge
  * Create the 'downloads' image with the standard Font and standard Image.
  */
-class CreateDownloadsBadge extends BaseCreatePackagistImage
+final class CreateDownloadsBadge extends BaseCreatePackagistImage
 {
-    private const COLOR = '007ec6';
-    private const SUBJECT = 'downloads';
+    private const string COLOR = '007ec6';
+    private const string SUBJECT = 'downloads';
 
-    private const TTL_DEFAULT_MAXAGE = CacheableBadge::TTL_ONE_HOUR;
-    private const TTL_DEFAULT_SMAXAGE = CacheableBadge::TTL_ONE_HOUR;
+    private const int TTL_DEFAULT_MAXAGE = CacheableBadge::TTL_ONE_HOUR;
+    private const int TTL_DEFAULT_SMAXAGE = CacheableBadge::TTL_ONE_HOUR;
 
     private NormalizerInterface $normalizer;
 
@@ -39,9 +38,9 @@ class CreateDownloadsBadge extends BaseCreatePackagistImage
     }
 
     /**
-     * @throws InvalidArgumentException
+     * @throws \InvalidArgumentException
      */
-    public function createDownloadsBadge(string $repository, string $type, string $format): CacheableBadge
+    public function createDownloadsBadge(string $repository, string $type, string $format = Badge::DEFAULT_FORMAT, string $style = Badge::DEFAULT_STYLE): CacheableBadge
     {
         $maxage = self::TTL_DEFAULT_MAXAGE;
         $smaxage = self::TTL_DEFAULT_SMAXAGE;
@@ -51,6 +50,7 @@ class CreateDownloadsBadge extends BaseCreatePackagistImage
             self::SUBJECT,
             self::COLOR,
             $format,
+            $style,
             $type,
             $maxage,
             $smaxage

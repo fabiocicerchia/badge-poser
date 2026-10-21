@@ -6,9 +6,9 @@ parameters:
     checkMissingIterableValueType: false
     checkGenericClassInNonGenericObjectType: false
     symfony:
-        container_xml_path: var/cache/test/srcApp_KernelTestDebugContainer.xml
-        constant_hassers: false
-    bootstrapFiles:
-        - bin/.phpunit/phpunit/vendor/autoload.php
+        containerXmlPath: var/cache/dev/App_KernelDevDebugContainer.xml
+        constantHassers: false
+    scanDirectories:
+        - var/cache/dev/Symfony/Config
 includes:
     - phpstan-baseline.neon

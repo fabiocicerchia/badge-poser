@@ -4,65 +4,164 @@ namespace App\Tests\Service;
 
 use App\Service\SnippetGenerator;
 use PHPUnit\Framework\TestCase;
+use PUGX\Poser\Poser;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Routing\RouterInterface;
 
-/**
- * Class SnippetGeneratorTest.
- */
-class SnippetGeneratorTest extends TestCase
+final class SnippetGeneratorTest extends TestCase
 {
-    public function testGenerateAllSnippetsWithFeaturedBadges(): void
+    public function testGenerateAllSnippetsWithAndWithoutFeaturedBadges(): void
     {
-        $badges = [
-            [
-                'name' => 'badge_1_name',
-                'label' => 'badge_1_lable',
-                'route' => 'badge_1_route',
-                'routeParam1' => 'param1Value',
-                'routeParam3' => 'param3Value',
-            ],
-            [
-                'name' => 'badge_2_name',
-                'label' => 'badge_2_lable',
-                'route' => 'badge_2_route',
-                'routeParam1' => 'param1Value',
-            ],
-        ];
-
-        $routeBadge1 = $this->getMockBuilder(Route::class)
+        $routePugxBadgeVersionLatest = $this->getMockBuilder(Route::class)
             ->disableOriginalConstructor()
             ->getMock();
-        $routeBadge1->method('getDefaults')
+        $routePugxBadgeVersionLatest->method('getDefaults')
             ->willReturn([
-                'routeParam1' => 'param1DefValue',
-                'routeParam2' => 'param2DefValue',
+                'latest' => 'stable',
+                'style' => 'flat',
+                '_ext' => 'svg',
             ]);
-        $routeBadge1->method('getRequirements')
+        $routePugxBadgeVersionLatest->method('getRequirements')
             ->willReturn([
-                'routeParam1' => '\d+',
-                'routeParam3' => '.+',
+                'latest' => 'stable|unstable',
+                'repository' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?',
+                'style' => 'flat|flat-square|for-the-badge|plastic',
+                '_ext' => 'svg',
             ]);
 
-        $routeBadge2 = $this->getMockBuilder(Route::class)
+        $routePugxBadgeVersionLatestUnstable = $routePugxBadgeVersionLatest;
+
+        $routePugxBadgeDownload = $this->getMockBuilder(Route::class)
             ->disableOriginalConstructor()
             ->getMock();
-        $routeBadge2->method('getDefaults')
+        $routePugxBadgeDownload->method('getDefaults')
             ->willReturn([
-                'routeParam1' => 'param1DefValue',
+                'type' => 'total',
+                'style' => 'flat',
+                '_ext' => 'svg',
             ]);
-        $routeBadge2->method('getRequirements')
-            ->willReturn([]);
+        $routePugxBadgeDownload->method('getRequirements')
+            ->willReturn([
+                'repository' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?',
+                'style' => 'flat|flat-square|for-the-badge|plastic',
+                '_ext' => 'svg',
+            ]);
 
-        $routeCollection = $this->getMockBuilder(RouteCollection::class)
+        $routePugxBadgeLicense = $this->getMockBuilder(Route::class)
+            ->disableOriginalConstructor()
             ->getMock();
+        $routePugxBadgeLicense->method('getDefaults')
+            ->willReturn([
+                'style' => 'flat',
+                '_ext' => 'svg',
+            ]);
+        $routePugxBadgeLicense->method('getRequirements')
+            ->willReturn([
+                'repository' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?',
+                'style' => 'flat|flat-square|for-the-badge|plastic',
+                '_ext' => 'svg',
+            ]);
+
+        $routepugxBadgeDownloadTypeMonthly = $this->getMockBuilder(Route::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $routepugxBadgeDownloadTypeMonthly->method('getDefaults')
+            ->willReturn([
+                'style' => 'flat',
+                '_ext' => 'svg',
+            ]);
+        $routepugxBadgeDownloadTypeMonthly->method('getRequirements')
+            ->willReturn([
+                'type' => 'total|daily|monthly',
+                'repository' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?',
+                'style' => 'flat|flat-square|for-the-badge|plastic',
+                '_ext' => 'svg',
+            ]);
+
+        $routepugxBadgeDownloadTypeDaily = $routepugxBadgeDownloadTypeMonthly;
+
+        $routePugxBadgeVersion = $this->getMockBuilder(Route::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $routePugxBadgeVersion->method('getDefaults')
+            ->willReturn([
+                'latest' => 'stable',
+                'style' => 'flat',
+                '_ext' => 'svg',
+            ]);
+        $routePugxBadgeVersion->method('getRequirements')
+            ->willReturn([
+                'repository' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?',
+                'style' => 'flat|flat-square|for-the-badge|plastic',
+                '_ext' => 'svg',
+            ]);
+
+        $routePugxBadgeRequire = $this->getMockBuilder(Route::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $routePugxBadgeRequire->method('getDefaults')
+            ->willReturn([
+                'style' => 'flat',
+                '_ext' => 'svg',
+            ]);
+        $routePugxBadgeRequire->method('getRequirements')
+            ->willReturn([
+                'repository' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?',
+                'type' => '.+',
+                'style' => 'flat|flat-square|for-the-badge|plastic',
+                '_ext' => 'svg',
+            ]);
+
+        $routePugxBadgeComposerlock = $this->getMockBuilder(Route::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $routePugxBadgeComposerlock->method('getDefaults')
+            ->willReturn([
+                'style' => 'flat',
+                '_ext' => 'svg',
+            ]);
+        $routePugxBadgeComposerlock->method('getRequirements')
+            ->willReturn([
+                'repository' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?',
+                'style' => 'flat|flat-square|for-the-badge|plastic',
+                '_ext' => 'svg',
+            ]);
+
+        $routePugxBadgeGitAttributes = $routePugxBadgeDependents = $routePugxBadgeSuggesters = $routePugxBadgeComposerlock;
+
+        $routePugxBadgeCircleci = $this->getMockBuilder(Route::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $routePugxBadgeCircleci->method('getDefaults')
+            ->willReturn([
+                'branch' => 'master',
+                'style' => 'flat',
+                '_ext' => 'svg',
+            ]);
+        $routePugxBadgeCircleci->method('getRequirements')
+            ->willReturn([
+                'repository' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?',
+                'branch' => '.+',
+                'style' => 'flat|flat-square|for-the-badge|plastic',
+                '_ext' => 'svg',
+            ]);
+
+        $routeCollection = $this->createMock(RouteCollection::class);
         $routeCollection->method('get')
-            ->withConsecutive(
-                ['badge_1_route'],
-                ['badge_2_route'],
-            )
-            ->willReturnOnConsecutiveCalls($routeBadge1, $routeBadge2);
+            ->willReturnMap([
+                ['pugx_badge_version_latest', $routePugxBadgeVersionLatest],
+                ['pugx_badge_download', $routePugxBadgeDownload],
+                ['pugx_badge_license', $routePugxBadgeLicense],
+                ['pugx_badge_download_type', $routepugxBadgeDownloadTypeMonthly],
+                ['pugx_badge_version', $routePugxBadgeVersion],
+                ['pugx_badge_require', $routePugxBadgeRequire],
+                ['pugx_badge_composerlock', $routePugxBadgeComposerlock],
+                ['pugx_badge_gitattributes', $routePugxBadgeGitAttributes],
+                ['pugx_badge_dependents', $routePugxBadgeDependents],
+                ['pugx_badge_suggesters', $routePugxBadgeSuggesters],
+                ['pugx_badge_circleci', $routePugxBadgeCircleci],
+            ]);
 
         $router = $this->getMockBuilder(RouterInterface::class)
             ->getMock();
@@ -70,136 +169,177 @@ class SnippetGeneratorTest extends TestCase
             ->willReturn($routeCollection);
         $router
             ->method('generate')
-            ->withConsecutive(
-                [
-                    'pugx_badge_packagist',
-                    ['repository' => 'vendor/package'],
-                ],
-                [
-                    'badge_1_route',
-                    ['routeParam1' => 'param1Value', 'routeParam3' => 'param3Value'],
-                    RouterInterface::ABSOLUTE_URL,
-                ],
-                [
-                    'badge_2_route',
-                    ['routeParam1' => 'param1Value'],
-                    RouterInterface::ABSOLUTE_URL,
-                ],
-            )
-            ->willReturnOnConsecutiveCalls('repo_url', 'img_url', 'img_url2');
+            ->willReturnCallback(static function (string $name, array $params = [], int $referenceType = RouterInterface::ABSOLUTE_URL) {
+                if ('pugx_badge_packagist' === $name) {
+                    return 'repo_url';
+                }
 
-        $generator = new SnippetGenerator($router, ['badge_1_name', 'badge_2_name'], $badges);
+                if ('pugx_badge_version_latest' === $name) {
+                    return ($params['latest'] ?? 'stable') === 'unstable' ? 'img_url2' : 'img_url0';
+                }
+
+                if ('pugx_badge_download' === $name) {
+                    return 'img_url1';
+                }
+
+                if ('pugx_badge_license' === $name) {
+                    return 'img_url3';
+                }
+
+                if ('pugx_badge_download_type' === $name) {
+                    return ($params['type'] ?? 'monthly') === 'daily' ? 'img_url5' : 'img_url4';
+                }
+
+                if ('pugx_badge_version' === $name) {
+                    return 'img_url6';
+                }
+
+                if ('pugx_badge_require' === $name) {
+                    return 'img_url7';
+                }
+
+                $map = [
+                    'pugx_badge_composerlock' => 'img_url8',
+                    'pugx_badge_gitattributes' => 'img_url9',
+                    'pugx_badge_dependents' => 'img_url10',
+                    'pugx_badge_suggesters' => 'img_url11',
+                    'pugx_badge_circleci' => 'img_url12',
+                ];
+
+                if (!\array_key_exists($name, $map)) {
+                    throw new \InvalidArgumentException(\sprintf('Unexpected route name "%s" in SnippetGeneratorTest router mock.', $name));
+                }
+
+                return $map[$name];
+            });
+
+        $poser = $this->getMockBuilder(Poser::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $generator = new SnippetGenerator($router);
 
         $expected = [
             'all' => [
-                'markdown' => '[![badge_1_lable](img_url)](repo_url) [![badge_2_lable](img_url2)](repo_url)',
+                'markdown' => '[![Latest Stable Version](img_url0)](repo_url) [![Total Downloads](img_url1)](repo_url) [![Latest Unstable Version](img_url2)](repo_url) [![License](img_url3)](repo_url) [![PHP Version Require](img_url7)](repo_url)',
             ],
             'badges' => [
                 [
-                    'name' => 'badge_1_name',
-                    'label' => 'badge_1_lable',
-                    'markdown' => '[![badge_1_lable](img_url)](repo_url)',
-                    'img' => 'img_url',
+                    'name' => 'latest_stable_version',
+                    'label' => 'Latest Stable Version',
+                    'markdown' => '[![Latest Stable Version](img_url0)](repo_url)',
+                    'img' => 'img_url0',
+                    'imgLink' => 'repo_url',
                     'featured' => true,
                 ],
                 [
-                    'name' => 'badge_2_name',
-                    'label' => 'badge_2_lable',
-                    'markdown' => '[![badge_2_lable](img_url2)](repo_url)',
+                    'name' => 'total',
+                    'label' => 'Total Downloads',
+                    'markdown' => '[![Total Downloads](img_url1)](repo_url)',
+                    'img' => 'img_url1',
+                    'imgLink' => 'repo_url',
+                    'featured' => true,
+                ],
+                [
+                    'name' => 'latest_unstable_version',
+                    'label' => 'Latest Unstable Version',
+                    'markdown' => '[![Latest Unstable Version](img_url2)](repo_url)',
                     'img' => 'img_url2',
+                    'imgLink' => 'repo_url',
                     'featured' => true,
                 ],
-            ],
-        ];
-
-        self::assertEquals($expected, $generator->generateAllSnippets('vendor/package'));
-    }
-
-    public function testGenerateAllSnippetsWithoutFeaturedBadges(): void
-    {
-        $badges = [
-            [
-                'name' => 'badge_name',
-                'label' => 'badge_lable',
-                'route' => 'badge_route',
-                'routeParam' => 'paramValue',
-            ],
-        ];
-
-        $badgeRoute = $this->getMockBuilder(Route::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $badgeRoute->method('getDefaults')
-            ->willReturn([
-                'routeParam' => 'paramDefValue',
-            ]);
-        $badgeRoute->method('getRequirements')
-            ->willReturn([]);
-
-        $routeCollection = $this->getMockBuilder(RouteCollection::class)
-            ->getMock();
-        $routeCollection->method('get')
-            ->with('badge_route')
-            ->willReturn($badgeRoute);
-
-        $router = $this->getMockBuilder(RouterInterface::class)
-            ->getMock();
-        $router->method('getRouteCollection')
-            ->willReturn($routeCollection);
-        $router
-            ->method('generate')
-            ->withConsecutive(
                 [
-                    'pugx_badge_packagist',
-                    [
-                        'repository' => 'vendor/package',
-                    ],
+                    'name' => 'license',
+                    'label' => 'License',
+                    'markdown' => '[![License](img_url3)](repo_url)',
+                    'img' => 'img_url3',
+                    'imgLink' => 'repo_url',
+                    'featured' => true,
                 ],
                 [
-                    'badge_route',
-                    [
-                        'routeParam' => 'paramValue',
-                    ],
-                    RouterInterface::ABSOLUTE_URL,
+                    'name' => 'monthly',
+                    'label' => 'Monthly Downloads',
+                    'markdown' => '[![Monthly Downloads](img_url4)](repo_url)',
+                    'img' => 'img_url4',
+                    'imgLink' => 'repo_url',
+                    'featured' => false,
                 ],
-            )
-            ->willReturnOnConsecutiveCalls('repo_url', 'img_url');
-
-        $generator = new SnippetGenerator($router, [], $badges);
-
-        $expected = [
-            'all' => [
-                'markdown' => '',
-            ],
-            'badges' => [
                 [
-                    'name' => 'badge_name',
-                    'label' => 'badge_lable',
-                    'markdown' => '[![badge_lable](img_url)](repo_url)',
-                    'img' => 'img_url',
+                    'name' => 'daily',
+                    'label' => 'Daily Downloads',
+                    'markdown' => '[![Daily Downloads](img_url5)](repo_url)',
+                    'img' => 'img_url5',
+                    'imgLink' => 'repo_url',
+                    'featured' => false,
+                ],
+                [
+                    'name' => 'version',
+                    'label' => 'Version',
+                    'markdown' => '[![Version](img_url6)](repo_url)',
+                    'img' => 'img_url6',
+                    'imgLink' => 'repo_url',
+                    'featured' => false,
+                ],
+                [
+                    'name' => 'require_php',
+                    'label' => 'PHP Version Require',
+                    'markdown' => '[![PHP Version Require](img_url7)](repo_url)',
+                    'img' => 'img_url7',
+                    'imgLink' => 'repo_url',
+                    'featured' => true,
+                ],
+                [
+                    'name' => 'composerlock',
+                    'label' => 'composer.lock',
+                    'markdown' => '[![composer.lock](img_url8)](repo_url)',
+                    'img' => 'img_url8',
+                    'imgLink' => 'repo_url',
+                    'featured' => false,
+                ],
+                [
+                    'name' => 'gitattributes',
+                    'label' => '.gitattributes',
+                    'markdown' => '[![.gitattributes](img_url9)](repo_url)',
+                    'img' => 'img_url9',
+                    'imgLink' => 'repo_url',
+                    'featured' => false,
+                ],
+                [
+                    'name' => 'dependents',
+                    'label' => 'Dependents',
+                    'markdown' => '[![Dependents](img_url10)](repo_url)',
+                    'img' => 'img_url10',
+                    'imgLink' => 'repo_url',
+                    'featured' => false,
+                ],
+                [
+                    'name' => 'suggesters',
+                    'label' => 'Suggesters',
+                    'markdown' => '[![Suggesters](img_url11)](repo_url)',
+                    'img' => 'img_url11',
+                    'imgLink' => 'repo_url',
+                    'featured' => false,
+                ],
+                [
+                    'name' => 'circleci',
+                    'label' => 'CircleCI Build',
+                    'markdown' => '[![CircleCI Build](img_url12)](repo_url)',
+                    'img' => 'img_url12',
+                    'imgLink' => 'repo_url',
                     'featured' => false,
                 ],
             ],
         ];
 
-        self::assertEquals($expected, $generator->generateAllSnippets('vendor/package'));
+        self::assertEquals($expected, $generator->generateAllSnippets($poser, 'vendor/package'));
     }
 
     public function testWontGenerateAllSnippetsIfBadgeRouteDoesNotExists(): void
     {
-        $badges = [
-            [
-                'name' => 'badge_name',
-                'label' => 'badge_lable',
-                'route' => 'badge_route',
-                'routeParam' => 'paramValue',
-            ],
-        ];
-
         $routeCollection = $this->getMockBuilder(RouteCollection::class)
             ->getMock();
         $routeCollection->method('get')
-            ->with('badge_route')
+            ->with('pugx_badge_version_latest')
             ->willReturn(null);
 
         $router = $this->getMockBuilder(RouterInterface::class)
@@ -216,9 +356,13 @@ class SnippetGeneratorTest extends TestCase
             )
             ->willReturn('repo_url');
 
+        $poser = $this->getMockBuilder(Poser::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
         $this->expectException(\RuntimeException::class);
 
-        $generator = new SnippetGenerator($router, [], $badges);
-        $generator->generateAllSnippets('vendor/package');
+        $generator = new SnippetGenerator($router);
+        $generator->generateAllSnippets($poser, 'vendor/package');
     }
 }

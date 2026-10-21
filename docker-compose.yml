@@ -1,55 +1,77 @@
-version: '3.8'
-
 services:
   nginx:
     build:
       context: .
       dockerfile: sys/docker/alpine-nginx/Dockerfile
-      network: host
     container_name: badge-poser-nginx
     depends_on:
       - phpfpm
-    deploy:
-      resources:
-        limits:
-          cpus: '0.25'
-          memory: 128M
     env_file:
       - ./.env
-    ports:
-      - 8001:80
-    volumes:
-      - .:/application:cached
+      - ./.env.local
+      - ./.env.test
     working_dir: /application
+    volumes:
+      - .:/application
+      - ./sys/nginx/default.conf.template.dev:/etc/nginx/templates/default.conf.template
+    ports:
+      - "8001:80"
+      - "8002:443"
+    networks:
+      - application-network
 
   phpfpm:
     build:
       context: .
       dockerfile: sys/docker/alpine-phpfpm/Dockerfile
-      network: host
     container_name: badge-poser-phpfpm
     depends_on:
       - redis
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 1024M
     env_file:
       - ./.env
+      - ./.env.local
+      - ./.env.test
+    working_dir: /application
+    command: |
+      /bin/sh -c "
+        apk --no-cache add shadow
+        usermod -u 1000 www-data
+        groupmod -g 1000 www-data
+        chown -R www-data: /application
+        php-fpm
+      "
+    volumes:
+      - .:/application
+      - ./sys/php/php.ini-dev:/usr/local/etc/php/conf.d/zz-overrides.ini
     ports:
-      - 9000:9000
+      - "9000:9000"
+    networks:
+      - application-network
+
+  node:
+    container_name: badge-poser-node
+    image: node:18.17.1-alpine3.18
+    user: "node"
+    working_dir: /application
     volumes:
       - .:/application:cached
-      - ./sys/php/php.ini-dev:/usr/local/etc/php/php.ini:ro
-    working_dir: /application
+    networks:
+      - application-network
 
   redis:
     container_name: badge-poser-redis
-    image: redis:6.0.8-alpine3.12
+    image: redis:7.0.5-alpine3.16
     ports:
-      - 6379:6379
+      - "6379:6379"
+    networks:
+      - application-network
     sysctls:
       # WARNING: The TCP backlog setting of 511 cannot be enforced because
       # /proc/sys/net/core/somaxconn is set to the lower value of 128.
       net.core.somaxconn: 1024
+
+
+# Docker Networks
+networks:
+  application-network:
+    driver: bridge

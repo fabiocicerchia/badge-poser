@@ -11,6 +11,7 @@
 
 namespace App\Badge\Model\UseCase;
 
+use App\Badge\Model\Badge;
 use App\Badge\Model\CacheableBadge;
 use App\Badge\Model\Package;
 use App\Badge\Model\PackageRepositoryInterface;
@@ -20,31 +21,25 @@ use App\Badge\Service\TextNormalizer;
 /**
  * Create the 'dependents' image with the standard Font and standard Image.
  */
-class CreateDependentsBadge extends BaseCreatePackagistImage
+final class CreateDependentsBadge extends BaseCreatePackagistImage
 {
-    public const COLOR = '007ec6';
-    public const SUBJECT = 'dependents';
+    public const string COLOR = '007ec6';
+    public const string SUBJECT = 'dependents';
 
-    private const TTL_DEFAULT_MAXAGE = CacheableBadge::TTL_ONE_HOUR;
-    private const TTL_DEFAULT_SMAXAGE = CacheableBadge::TTL_ONE_HOUR;
+    private const int TTL_DEFAULT_MAXAGE = CacheableBadge::TTL_ONE_HOUR;
+    private const int TTL_DEFAULT_SMAXAGE = CacheableBadge::TTL_ONE_HOUR;
 
-    /**
-     * @var NormalizerInterface
-     */
-    private $normalizer;
+    private NormalizerInterface $normalizer;
 
-    /**
-     * @param NormalizerInterface $textNormalizer
-     */
     public function __construct(
         PackageRepositoryInterface $packageRepository,
-        NormalizerInterface $textNormalizer = null
+        ?NormalizerInterface $textNormalizer = null
     ) {
         parent::__construct($packageRepository);
         $this->normalizer = $textNormalizer ?? new TextNormalizer();
     }
 
-    public function createDependentsBadge(string $repository, string $format = 'svg'): CacheableBadge
+    public function createDependentsBadge(string $repository, string $format = Badge::DEFAULT_FORMAT, string $style = Badge::DEFAULT_STYLE): CacheableBadge
     {
         $maxage = self::TTL_DEFAULT_MAXAGE;
         $smaxage = self::TTL_DEFAULT_SMAXAGE;
@@ -54,6 +49,7 @@ class CreateDependentsBadge extends BaseCreatePackagistImage
             self::SUBJECT,
             self::COLOR,
             $format,
+            $style,
             null,
             $maxage,
             $smaxage

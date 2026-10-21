@@ -2,56 +2,37 @@
 
 namespace App\Service;
 
+use App\Dictionary\AllInBadges;
+use App\Dictionary\Badges;
+use PUGX\Poser\Poser;
 use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Routing\RouterInterface;
 
-/**
- * Class SnippetGenerator.
- */
-class SnippetGenerator implements SnippetGeneratorInterface
+final readonly class SnippetGenerator implements SnippetGeneratorInterface
 {
-    private const PACKAGIST_ROUTE = 'pugx_badge_packagist';
-
-    private RouterInterface $router;
-
-    /** @var array<int, array> */
-    private array $badges;
-
-    /** @var array<int, string> */
-    private array $allInBadges;
+    private const string PACKAGIST_ROUTE = 'pugx_badge_packagist';
 
     private RouteCollection $routes;
 
-    private string $packagistRoute;
-
-    /**
-     * @param array<int, string> $allInBadges
-     * @param array<int, array>  $badges
-     */
     public function __construct(
-        RouterInterface $router,
-        array $allInBadges,
-        array $badges,
-        string $packagistRoute = self::PACKAGIST_ROUTE
+        private RouterInterface $router,
+        private string $packagistRoute = self::PACKAGIST_ROUTE,
     ) {
-        $this->router = $router;
         $this->routes = $router->getRouteCollection();
-        $this->allInBadges = $allInBadges;
-        $this->badges = $badges;
-        $this->packagistRoute = $packagistRoute;
     }
 
     /**
      * @throws \Exception
      */
-    public function generateAllSnippets(string $repository): array
+    public function generateAllSnippets(Poser $poser, string $repository): array
     {
         $repoLink = $this->generateRepositoryLink($repository);
 
         $snippets = [];
         $snippets['all']['markdown'] = '';
+        $badges = Badges::getAll();
 
-        foreach ($this->badges as $badge) {
+        foreach ($badges as $badge) {
             $img = $this->generateImg($badge, $repository);
             $markdown = $this->generateMarkdown($badge, $img, $repoLink);
             $snippets['badges'][] = [
@@ -59,15 +40,37 @@ class SnippetGenerator implements SnippetGeneratorInterface
                 'label' => $badge['label'],
                 'markdown' => $markdown,
                 'img' => $img,
-                'featured' => \in_array($badge['name'], $this->allInBadges, true),
+                'imgLink' => $repoLink,
+                'featured' => AllInBadges::isABadgeName($badge['name']),
             ];
 
-            if (\in_array($badge['name'], $this->allInBadges, true)) {
+            if (AllInBadges::isABadgeName($badge['name'])) {
                 $snippets['all']['markdown'] .= ' '.$markdown;
             }
         }
 
         $snippets['all']['markdown'] = \trim($snippets['all']['markdown']);
+
+        $badge = [
+            'name' => 'latest_stable_version',
+            'route' => 'pugx_badge_version_latest',
+        ];
+        $validStyles = $poser->validStyles();
+        \sort($validStyles);
+        foreach ($validStyles as $style) {
+            $badge['style'] = $style;
+            $badge['label'] = $style;
+            $img = $this->generateImg($badge, $repository);
+            $markdown = $this->generateMarkdown($badge, $img, $repoLink);
+            $snippets['badge_styles'][] = [
+                'name' => $badge['name'],
+                'label' => $badge['label'],
+                'markdown' => $markdown,
+                'img' => $img,
+                'imgLink' => $repoLink,
+                'featured' => false,
+            ];
+        }
 
         return $snippets;
     }

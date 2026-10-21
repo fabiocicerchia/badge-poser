@@ -1,0 +1,57 @@
+name: Deploy
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Check Docker Version
+      run: docker --version
+    - name: Install Latest Docker
+      run: |
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+        sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu  $(lsb_release -cs)  stable"
+        sudo apt-get update
+        sudo apt-get install docker-ce=5:24.0.5-1~ubuntu.22.04~jammy
+    - name: Check Docker Version
+      run: docker --version
+
+    - name: Configure AWS CLI
+      env:
+        AWS_PROFILE: ${{ secrets.AWS_PROFILE }}
+        AWS_REGION: ${{ secrets.AWS_REGION }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      run: |
+        aws --profile $AWS_PROFILE configure set region $AWS_REGION
+        aws --profile $AWS_PROFILE configure set cli_pager ''
+        aws --profile $AWS_PROFILE configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+        aws --profile $AWS_PROFILE configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+
+    - name: Configure Terraform
+      uses: hashicorp/setup-terraform@v3
+
+    - name: Prepare settings
+      env:
+        PARAM_TFVARS: ${{ secrets.PARAM_TFVARS }}
+      run: echo "$PARAM_TFVARS" > sys/terraform/terraform.tfvars
+
+    - name: Terraform init
+      run: terraform init
+
+    - name: Deploy
+      env:
+        AWS_PROFILE: ${{ secrets.AWS_PROFILE }}
+        AWS_REGION: ${{ secrets.AWS_REGION }}
+        AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      run: make deploy_prod

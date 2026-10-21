@@ -4,37 +4,37 @@ namespace App\Controller;
 
 use App\Service\SnippetGeneratorInterface;
 use GuzzleHttp\Exception\BadResponseException;
+use PUGX\Poser\Poser;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Attribute\Route;
 
-/**
- * Class SnippetController.
- */
-class SnippetController extends AbstractController
+final class SnippetController extends AbstractController
 {
     /**
      * Returns all snippets for a package.
      *
      * @throws \Exception
      */
-    public function all(Request $request, SnippetGeneratorInterface $generator): JsonResponse
+    #[Route('/snippet/all/', name: 'snippet_all')]
+    public function all(Request $request, Poser $poser, SnippetGeneratorInterface $generator): JsonResponse
     {
         $repository = $request->get('repository');
         $response = new JsonResponse();
 
         if (!$this->isValidRepositoryName($repository)) {
-            $response->setData(['msg' => 'Package not found. Please check the package name. eg. (symfony/symfony)']);
+            $response->setData(['msg' => 'Package not found. Please check the package name. e.g. (symfony/symfony)']);
             $response->setStatusCode(404);
 
             return $response;
         }
 
         try {
-            $badges = $generator->generateAllSnippets($repository);
+            $badges = $generator->generateAllSnippets($poser, $repository);
             $response->setData($badges);
-        } catch (BadResponseException $e) {
-            $response->setData(['msg' => 'Package not found. Please check the package name. eg. (symfony/symfony)']);
+        } catch (BadResponseException) {
+            $response->setData(['msg' => 'Package not found. Please check the package name. e.g. (symfony/symfony)']);
             $response->setStatusCode(404);
         } catch (\Exception $e) {
             $response->setData(['msg' => 'Server Error']);
@@ -51,8 +51,12 @@ class SnippetController extends AbstractController
     /**
      * Validates a repository name.
      */
-    private function isValidRepositoryName(string $repository): bool
+    private function isValidRepositoryName(?string $repository): bool
     {
+        if (null === $repository) {
+            return false;
+        }
+
         return 1 === \preg_match('/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+?/', $repository);
     }
 }

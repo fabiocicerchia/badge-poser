@@ -11,6 +11,7 @@
 
 namespace App\Controller\Badge;
 
+use App\Badge\Model\Badge;
 use App\Badge\Model\UseCase\CreateVersionBadge;
 use App\Badge\Service\ImageFactory;
 use PUGX\Poser\Poser;
@@ -18,18 +19,11 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Class VersionController
  * Version action for badges.
  */
-class VersionController extends AbstractBadgeController
+final class VersionController extends AbstractBadgeController
 {
     /**
-     * Version action.
-     *
-     * @param string $repository repository
-     * @param string $latest     latest
-     * @param string $format
-     *
      * @throws \InvalidArgumentException
      */
     public function version(
@@ -37,19 +31,17 @@ class VersionController extends AbstractBadgeController
         Poser $poser,
         ImageFactory $imageFactory,
         CreateVersionBadge $createVersionBadge,
-        $repository,
-        $latest,
-        $format = 'svg'
+        string $repository,
+        string $latest,
+        string $format = Badge::DEFAULT_FORMAT,
+        string $style = Badge::DEFAULT_STYLE,
     ): Response {
-        if (\in_array($request->query->get('format'), $poser->validStyles(), true)) {
-            $format = $request->query->get('format');
-        }
-
+        $style = $this->checkStyle($request, $poser, $style);
         $function = 'create'.\ucfirst($latest).'Badge';
 
         return $this->serveBadge(
             $imageFactory,
-            $createVersionBadge->{$function}($repository, $format)
+            $createVersionBadge->{$function}($repository, $format, $style)
         );
     }
 }

@@ -11,35 +11,35 @@
 
 namespace App\Badge\Model\UseCase;
 
+use App\Badge\Model\Badge;
 use App\Badge\Model\CacheableBadge;
 use App\Badge\Model\Package;
-use InvalidArgumentException;
 
 /**
- * Class CreateVersionBadge
  * Create the 'version' image using a generator `Poser`.
  */
-class CreateVersionBadge extends BaseCreatePackagistImage
+final class CreateVersionBadge extends BaseCreatePackagistImage
 {
-    private const COLOR_STABLE = '28a3df';
-    private const COLOR_UNSTABLE = 'e68718';
-    private const SUBJECT_STABLE = 'stable';
-    private const SUBJECT_UNSTABLE = 'unstable';
-    private const TEXT_NO_STABLE_RELEASE = 'No Release';
+    private const string COLOR_STABLE = '28a3df';
+    private const string COLOR_UNSTABLE = 'e68718';
+    private const string SUBJECT_STABLE = 'stable';
+    private const string SUBJECT_UNSTABLE = 'unstable';
+    private const string TEXT_NO_STABLE_RELEASE = 'No Release';
 
-    private const TTL_DEFAULT_MAXAGE = CacheableBadge::TTL_ONE_HOUR;
-    private const TTL_DEFAULT_SMAXAGE = CacheableBadge::TTL_ONE_HOUR;
+    private const int TTL_DEFAULT_MAXAGE = CacheableBadge::TTL_ONE_HOUR;
+    private const int TTL_DEFAULT_SMAXAGE = CacheableBadge::TTL_ONE_HOUR;
 
     /**
-     * @throws InvalidArgumentException
+     * @throws \InvalidArgumentException
      */
-    public function createStableBadge(string $repository, string $format = 'svg'): CacheableBadge
+    public function createStableBadge(string $repository, string $format = Badge::DEFAULT_FORMAT, string $style = Badge::DEFAULT_STYLE): CacheableBadge
     {
         return $this->createBadgeFromRepository(
             $repository,
             self::SUBJECT_STABLE,
             self::COLOR_STABLE,
             $format,
+            $style,
             'stable',
             self::TTL_DEFAULT_MAXAGE,
             self::TTL_DEFAULT_SMAXAGE
@@ -47,15 +47,16 @@ class CreateVersionBadge extends BaseCreatePackagistImage
     }
 
     /**
-     * @throws InvalidArgumentException
+     * @throws \InvalidArgumentException
      */
-    public function createUnstableBadge(string $repository, string $format = 'svg'): CacheableBadge
+    public function createUnstableBadge(string $repository, string $format = Badge::DEFAULT_FORMAT, string $style = Badge::DEFAULT_STYLE): CacheableBadge
     {
         return $this->createBadgeFromRepository(
             $repository,
             self::SUBJECT_UNSTABLE,
             self::COLOR_UNSTABLE,
             $format,
+            $style,
             'unstable',
             self::TTL_DEFAULT_MAXAGE,
             self::TTL_DEFAULT_SMAXAGE

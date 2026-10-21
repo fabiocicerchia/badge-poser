@@ -12,37 +12,27 @@
 namespace App\Badge\Model;
 
 /**
- * Class Image
  * An Image value Object.
  */
-class Image
+final readonly class Image implements \Stringable
 {
-    private string $name;
-    private string $content;
-    private string$format;
-
-    private function __construct(string $name, string $content, string $format)
-    {
-        $this->name = $name;
-        $this->content = $content;
-        $this->format = $format;
+    private function __construct(
+        private string $name,
+        private string $content,
+        private string $format,
+    ) {
     }
 
     /**
      * Returns the image content as binary string.
      */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->content;
     }
 
-    /**
-     * @return Image
-     */
     public static function create(string $name, string $content, string $format = 'svg'): self
     {
-        $content = (string) $content;
-
         return new self($name, $content, $format);
     }
 
@@ -66,8 +56,6 @@ class Image
             throw new \RuntimeException('Error while parsing image name');
         }
 
-        $clean = \strtolower(\trim($clean, '- '));
-
-        return $clean;
+        return \strtolower(\trim($clean, '- '));
     }
 }
