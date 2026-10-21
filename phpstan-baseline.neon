@@ -19,7 +19,13 @@ parameters:
 			message: "#^Unable to resolve the template type T in call to method PHPUnit\\\\Framework\\\\TestCase\\:\\:getMockBuilder\\(\\)$#"
 			count: 1
 			path: tests/Badge/Model/UseCase/CreateComposerLockBadgeTest.php
+
 		-
-		    message: "#^Method App\\\\Tests\\\\Stats\\\\Reader\\\\RedisReaderTest::testItReadsTotalAccess\\(\\) has parameter \\$total with no typehint specified.$#"
-		    count: 1
-		    path: tests/Stats/Reader/RedisReaderTest.php
+			message: "#^Property Symfony\\\\Component\\\\HttpFoundation\\\\Response\\:\\:\\$headers \\(Symfony\\\\Component\\\\HttpFoundation\\\\ResponseHeaderBag\\) does not accept PHPUnit\\\\Framework\\\\MockObject\\\\MockObject&Symfony\\\\Component\\\\HttpFoundation\\\\HeaderBag\\.$#"
+			count: 1
+			path: tests/EventListener/BadgeLoggerSubscriberTest.php
+
+		-
+			message: "#^Cannot call method getStatusCode\\(\\) on Symfony\\\\Component\\\\HttpFoundation\\\\Response\\|null\\.$#"
+			count: 1
+			path: tests/EventListener/BadgeSubscriberTest.php

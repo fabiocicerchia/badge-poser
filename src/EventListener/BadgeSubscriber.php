@@ -5,25 +5,15 @@ namespace App\EventListener;
 use App\Badge\Infrastructure\ResponseFactory;
 use App\Badge\Model\UseCase\CreateErrorBadge;
 use App\Badge\Service\ImageFactory;
-use InvalidArgumentException;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 
-/**
- * Class BadgeSubscriber.
- */
-class BadgeSubscriber implements EventSubscriberInterface
+final readonly class BadgeSubscriber implements EventSubscriberInterface
 {
-    private CreateErrorBadge $useCase;
-
-    private ImageFactory $imageFactory;
-
-    public function __construct(CreateErrorBadge $useCase, ImageFactory $imageFactory)
+    public function __construct(private CreateErrorBadge $useCase, private ImageFactory $imageFactory)
     {
-        $this->useCase = $useCase;
-        $this->imageFactory = $imageFactory;
     }
 
     public static function getSubscribedEvents(): array
@@ -34,7 +24,7 @@ class BadgeSubscriber implements EventSubscriberInterface
     }
 
     /**
-     * @throws InvalidArgumentException
+     * @throws \InvalidArgumentException
      */
     public function onKernelException(ExceptionEvent $event): void
     {
@@ -51,6 +41,6 @@ class BadgeSubscriber implements EventSubscriberInterface
 
     private function isABadgeController(?string $controllerName): bool
     {
-        return null !== $controllerName && 0 === \strpos($controllerName, 'App\Controller\Badge');
+        return null !== $controllerName && \str_starts_with($controllerName, 'App\Controller\Badge');
     }
 }

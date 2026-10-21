@@ -6,42 +6,66 @@ use App\Stats\Reader\RedisReader;
 use PHPUnit\Framework\TestCase;
 use Predis\Client as Redis;
 
-class RedisReaderTest extends TestCase
+final class RedisReaderTest extends TestCase
 {
-    /**
-     * @dataProvider readsTotalAccess
-     */
-    public function testItReadsTotalAccess(string $prefixKey, string $totalKey, $total, int $expectedTotal): void
+    public function testItReadsTotalAccessWithIntValue(): void
     {
         $redis = $this->getMockBuilder(Redis::class)
             ->disableOriginalConstructor()
             ->getMock();
 
         $redis->method('__call')
-            ->with('get', [\sprintf('%s.%s', $prefixKey, $totalKey)])
-            ->willReturn($total);
+            ->with('get', [\sprintf('%s.%s', 'STAT', 'TOTAL')])
+            ->willReturn(10);
 
         $reader = new RedisReader($redis);
 
-        $this->assertEquals($expectedTotal, $reader->totalAccess());
+        self::assertEquals(10, $reader->totalAccess());
     }
 
-    public function readsTotalAccess(): array
+    public function testItReadsTotalAccessWithNumericString(): void
     {
-        return [
-            [
-                'STAT', 'TOTAL', 10, 10,
-            ],
-            [
-                'STAT', 'TOTAL', '10', 10,
-            ],
-            [
-                'STAT', 'TOTAL', null, 0,
-            ],
-            [
-                'STAT', 'TOTAL', 'aString', 0,
-            ],
-        ];
+        $redis = $this->getMockBuilder(Redis::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $redis->method('__call')
+            ->with('get', [\sprintf('%s.%s', 'STAT', 'TOTAL')])
+            ->willReturn('10');
+
+        $reader = new RedisReader($redis);
+
+        self::assertEquals(10, $reader->totalAccess());
+    }
+
+    public function testItReadsTotalAccessWithNullValue(): void
+    {
+        $redis = $this->getMockBuilder(Redis::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $redis->method('__call')
+            ->with('get', [\sprintf('%s.%s', 'STAT', 'TOTAL')])
+            ->willReturn(null);
+
+        $reader = new RedisReader($redis);
+
+        self::assertEquals(0, $reader->totalAccess());
+    }
+
+    public function testItReadsTotalAccessWithStringValue(): void
+    {
+        $redis = $this->getMockBuilder(Redis::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $redis->method('__call')
+            ->with('get', [\sprintf('%s.%s', 'STAT', 'TOTAL')])
+            ->willReturn('aString');
+
+        $reader = new RedisReader($redis);
+
+        self::assertEquals(0, $reader->totalAccess());
     }
 
     public function testItReadsTotalAccessWithCustomKeys(): void
@@ -61,6 +85,6 @@ class RedisReaderTest extends TestCase
 
         $reader = new RedisReader($redis, $prefixKey, $totalKey);
 
-        $this->assertEquals(10, $reader->totalAccess());
+        self::assertEquals(10, $reader->totalAccess());
     }
 }

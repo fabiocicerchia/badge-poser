@@ -11,6 +11,7 @@
 
 namespace App\Badge\Model\UseCase;
 
+use App\Badge\Model\Badge;
 use App\Badge\Model\CacheableBadge;
 use App\Badge\Model\Package;
 use App\Badge\Model\PackageRepositoryInterface;
@@ -19,58 +20,48 @@ use App\Badge\ValueObject\Repository;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
-use InvalidArgumentException;
-use UnexpectedValueException;
 
 /**
- * Class CreateGitAttributesBadge
  * Create the 'gitattributes' image using a generator `Poser`.
  */
-class CreateGitAttributesBadge extends BaseCreatePackagistImage
+final class CreateGitAttributesBadge extends BaseCreatePackagistImage
 {
-    private const COLOR_COMMITTED = '96d490';
-    private const COLOR_UNCOMMITTED = 'ad6c4b';
-    private const COLOR_ERROR = 'aa0000';
-    private const GITATTRIBUTES_COMMITTED = 'committed';
-    private const GITATTRIBUTES_UNCOMMITTED = 'uncommitted';
-    private const GITATTRIBUTES_ERROR = 'checking';
-    private const SUBJECT = '.gitattributes';
-    private const SUBJECT_ERROR = 'Error';
-    private const TIMEOUT_SECONDS = 8;
-    private const CONNECT_TIMEOUT_SECONDS = 5;
+    private const string COLOR_COMMITTED = '96d490';
+    private const string COLOR_UNCOMMITTED = 'ad6c4b';
+    private const string COLOR_ERROR = 'aa0000';
+    private const string GITATTRIBUTES_COMMITTED = 'committed';
+    private const string GITATTRIBUTES_UNCOMMITTED = 'uncommitted';
+    private const string GITATTRIBUTES_ERROR = 'checking';
+    private const string SUBJECT = '.gitattributes';
+    private const string SUBJECT_ERROR = 'Error';
+    private const int TIMEOUT_SECONDS = 8;
+    private const int CONNECT_TIMEOUT_SECONDS = 5;
 
-    private const TTL_DEFAULT_MAXAGE = CacheableBadge::TTL_ONE_HOUR;
-    private const TTL_DEFAULT_SMAXAGE = CacheableBadge::TTL_ONE_HOUR;
+    private const int TTL_DEFAULT_MAXAGE = CacheableBadge::TTL_ONE_HOUR;
+    private const int TTL_DEFAULT_SMAXAGE = CacheableBadge::TTL_ONE_HOUR;
 
     protected string $text = self::GITATTRIBUTES_ERROR;
 
-    protected ClientInterface $client;
-
-    private ClientStrategy $clientStrategy;
-
     public function __construct(
         PackageRepositoryInterface $packageRepository,
-        ClientInterface $client,
-        ClientStrategy $clientStrategy
+        protected ClientInterface $client,
+        private readonly ClientStrategy $clientStrategy,
     ) {
         parent::__construct($packageRepository);
-        $this->client = $client;
-        $this->clientStrategy = $clientStrategy;
     }
 
     /**
-     * @throws InvalidArgumentException
-     * @throws UnexpectedValueException
+     * @throws \InvalidArgumentException
+     * @throws \UnexpectedValueException
      * @throws GuzzleException
      */
-    public function createGitAttributesBadge(string $repository, string $format = 'svg'): CacheableBadge
+    public function createGitAttributesBadge(string $repository, string $format = Badge::DEFAULT_FORMAT, string $style = Badge::DEFAULT_STYLE): CacheableBadge
     {
         try {
-            /** @var Package $package */
-            $package = $this->fetchPackage($repository);
+            $package = $this->fetchPackageWithRepo($repository);
             $repo = \str_replace('.git', '', $package->getRepository());
-        } catch (\Exception $e) {
-            return $this->createDefaultBadge($format);
+        } catch (\Exception) {
+            return $this->createDefaultBadge($format, $style);
         }
 
         $repositoryInfo = Repository::createFromRepositoryUrl($repo);
@@ -110,6 +101,7 @@ class CreateGitAttributesBadge extends BaseCreatePackagistImage
             $subject,
             $color,
             $format,
+            $style,
             null,
             self::TTL_DEFAULT_MAXAGE,
             self::TTL_DEFAULT_SMAXAGE

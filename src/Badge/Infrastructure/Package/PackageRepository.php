@@ -17,48 +17,45 @@ use App\Badge\Service\ClientStrategy;
 use App\Badge\ValueObject\Repository;
 use Packagist\Api\Client as PackagistClient;
 use Packagist\Api\Result\Package as ApiPackage;
-use UnexpectedValueException;
 
 /**
- * Class PackageRepository
  * This class is intended to load ApiPackage, create, and work with the Package object.
  */
-class PackageRepository implements PackageRepositoryInterface
+final class PackageRepository implements PackageRepositoryInterface
 {
     private static string $packageClass;
-    private PackagistClient $packagistClient;
-
-    private ClientStrategy $clientStrategy;
 
     public function __construct(
-        PackagistClient $packagistClient,
-        ClientStrategy $clientStrategy,
+        private readonly PackagistClient $packagistClient,
+        private readonly ClientStrategy $clientStrategy,
         string $packageClass = Package::class
     ) {
         self::$packageClass = $packageClass;
-        $this->packagistClient = $packagistClient;
-        $this->clientStrategy = $clientStrategy;
     }
 
     /**
      * Returns package if founded.
      *
-     * @throws UnexpectedValueException
+     * @throws \UnexpectedValueException
      */
-    public function fetchByRepository(string $repository): Package
+    public function fetchByRepository(string $repository, bool $withDefaultBranch = false): Package
     {
         $apiPackage = $this->packagistClient->get($repository);
         if (!$apiPackage instanceof ApiPackage) {
-            throw new UnexpectedValueException(\sprintf('Impossible to fetch package by "%s" repository.', $repository));
+            throw new \UnexpectedValueException(\sprintf('Impossible to fetch package by "%s" repository.', $repository));
         }
 
         $repositoryInfo = Repository::createFromRepositoryUrl($apiPackage->getRepository());
 
-        $defaultBranch = $this->clientStrategy->getDefaultBranch($repositoryInfo);
-
         /** @var Package $class */
         $class = self::$packageClass;
 
-        return $class::createFromApi($apiPackage, ['default_branch' => $defaultBranch]);
+        if (true === $withDefaultBranch) {
+            $defaultBranch = $this->clientStrategy->getDefaultBranch($repositoryInfo);
+
+            return $class::createFromApi($apiPackage, ['default_branch' => $defaultBranch]);
+        }
+
+        return $class::createFromApi($apiPackage);
     }
 }

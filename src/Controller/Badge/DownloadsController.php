@@ -11,6 +11,7 @@
 
 namespace App\Controller\Badge;
 
+use App\Badge\Model\Badge;
 use App\Badge\Model\UseCase\CreateDownloadsBadge;
 use App\Badge\Service\ImageFactory;
 use PUGX\Poser\Poser;
@@ -18,18 +19,11 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Class DownloadsController
  * Download action for badges.
  */
-class DownloadsController extends AbstractBadgeController
+final class DownloadsController extends AbstractBadgeController
 {
     /**
-     * Downloads action.
-     *
-     * @param string $repository repository
-     * @param string $type       badge type
-     * @param string $format
-     *
      * @throws \InvalidArgumentException
      */
     public function downloads(
@@ -37,17 +31,16 @@ class DownloadsController extends AbstractBadgeController
         Poser $poser,
         CreateDownloadsBadge $createDownloadsBadge,
         ImageFactory $imageFactory,
-        $repository,
-        $type,
-        $format = 'svg'
+        string $repository,
+        string $type,
+        string $format = Badge::DEFAULT_FORMAT,
+        string $style = Badge::DEFAULT_STYLE,
     ): Response {
-        if (\in_array($request->query->get('format'), $poser->validStyles(), true)) {
-            $format = $request->query->get('format');
-        }
+        $style = $this->checkStyle($request, $poser, $style);
 
         return $this->serveBadge(
             $imageFactory,
-            $createDownloadsBadge->createDownloadsBadge($repository, $type, $format)
+            $createDownloadsBadge->createDownloadsBadge($repository, $type, $format, $style),
         );
     }
 }

@@ -17,9 +17,6 @@ use App\Badge\Model\UseCase\CreateLicenseBadge;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Class CreateLicenseBadgeTest.
- */
 final class CreateLicenseBadgeTest extends TestCase
 {
     private CreateLicenseBadge $useCase;
@@ -34,35 +31,32 @@ final class CreateLicenseBadgeTest extends TestCase
 
     public function testShouldCreateLicenseBadge(): void
     {
-        $package = $this->getMockBuilder(Package::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['getLicense'])
-            ->getMock();
+        $package = $this->createMock(Package::class);
 
         $package->expects($this->once())
             ->method('getLicense')
             ->willReturn('MIT');
 
-        $this->repository->expects($this->any())
+        $this->repository
             ->method('fetchByRepository')
             ->willReturn($package);
 
         $repository = 'PUGX/badge-poser';
         $badge = $this->useCase->createLicenseBadge($repository);
-        $this->assertEquals('MIT', $badge->getStatus());
+        self::assertEquals('MIT', $badge->getStatus());
     }
 
     public function testShouldCreateDefaultBadgeOnError(): void
     {
-        $this->repository->expects($this->any())
+        $this->repository
             ->method('fetchByRepository')
             ->will($this->throwException(new \RuntimeException()));
 
         $repository = 'PUGX/badge-poser';
         $badge = $this->useCase->createLicenseBadge($repository);
 
-        $this->assertEquals(' - ', $badge->getSubject());
-        $this->assertEquals(' - ', $badge->getStatus());
-        $this->assertEquals('#7A7A7A', $badge->getHexColor());
+        self::assertEquals(' - ', $badge->getSubject());
+        self::assertEquals(' - ', $badge->getStatus());
+        self::assertEquals('#7A7A7A', $badge->getHexColor());
     }
 }

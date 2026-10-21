@@ -1,3 +1,4 @@
+-- increase counter if valid path
 local regex = [[/(]]
 regex = regex .. [[circleci(/.+)?(\.svg)?]]
 regex = regex .. [[|composerlock(\.svg)?]]
@@ -11,7 +12,8 @@ regex = regex .. [[|v/(stable|unstable)(\.svg|\.png)?]]
 regex = regex .. [[|version(\.svg|\.png)?]]
 regex = regex .. [[)$]]
 
-local m = ngx.re.match(ngx.var.request_uri, regex)
-if not m then return end
+local m2 = ngx.re.match(ngx.var.request_uri, regex)
+if not m2 then return end
 
 local res = ngx.location.capture("/stats")
+

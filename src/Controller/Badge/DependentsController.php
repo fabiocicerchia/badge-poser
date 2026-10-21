@@ -2,38 +2,29 @@
 
 namespace App\Controller\Badge;
 
+use App\Badge\Model\Badge;
 use App\Badge\Model\UseCase\CreateDependentsBadge;
 use App\Badge\Service\ImageFactory;
 use PUGX\Poser\Poser;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-/**
- * Class DependentsController.
- */
-class DependentsController extends AbstractBadgeController
+final class DependentsController extends AbstractBadgeController
 {
-    /**
-     * Dependents action.
-     *
-     * @param string $repository repository
-     * @param string $format
-     */
     public function dependents(
         Request $request,
         Poser $poser,
         CreateDependentsBadge $createDependentsBadge,
         ImageFactory $imageFactory,
-        $repository,
-        $format = 'svg'
+        string $repository,
+        string $format = Badge::DEFAULT_FORMAT,
+        string $style = Badge::DEFAULT_STYLE,
     ): Response {
-        if (\in_array($request->query->get('format'), $poser->validStyles(), true)) {
-            $format = $request->query->get('format');
-        }
+        $style = $this->checkStyle($request, $poser, $style);
 
         return $this->serveBadge(
             $imageFactory,
-            $createDependentsBadge->createDependentsBadge($repository, $format)
+            $createDependentsBadge->createDependentsBadge($repository, $format, $style)
         );
     }
 }

@@ -3,39 +3,43 @@
 namespace App\Tests\Badge\Model;
 
 use App\Badge\Model\Badge;
-use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Class BadgeTest.
- */
-class BadgeTest extends TestCase
+final class BadgeTest extends TestCase
 {
     public function testCreation(): void
     {
-        $badge = new Badge('sub', 'status', 'FFFFFF', 'svg');
+        $badge = new Badge('sub', 'status', 'FFFFFF', 'svg', 'flat');
 
-        $this->assertEquals('sub-status-FFFFFF.svg', (string) $badge);
+        self::assertEquals('sub-status-FFFFFF-flat.svg', (string) $badge);
     }
 
     public function testDashesAndUnderscores(): void
     {
-        $badge = new Badge('su--b', 'st-a_tu__s', 'FFFFFF', 'svg');
+        $badge = new Badge('su--b', 'st-a_tu__s', 'FFFFFF', 'svg', 'flat');
 
-        $this->assertEquals('su-b-st-a tu_s-FFFFFF.svg', (string) $badge);
+        self::assertEquals('su-b-st-a tu_s-FFFFFF-flat.svg', (string) $badge);
     }
 
     public function testShouldUseDefaultImageFormat(): void
     {
         $badge = new Badge('sub', 'status', 'FFFFFF');
 
-        $this->assertEquals('svg', $badge->getFormat());
+        self::assertEquals('svg', $badge->getFormat());
     }
 
-    /** @dataProvider  invalidColorProvider */
+    public function testShouldUseDefaultImageStyle(): void
+    {
+        $badge = new Badge('sub', 'status', 'FFFFFF');
+
+        self::assertEquals('flat', $badge->getStyle());
+    }
+
+    #[DataProvider('invalidColorProvider')]
     public function testShouldThrowExceptionForInvalidColors(string $color): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage(\sprintf('Color not valid %s', $color));
 
         new Badge('sub', 'status', $color);
@@ -44,7 +48,7 @@ class BadgeTest extends TestCase
     /**
      * @return \Generator<array<string>>
      */
-    public function invalidColorProvider(): \Generator
+    public static function invalidColorProvider(): \Generator
     {
         yield [''];
         yield ['null'];

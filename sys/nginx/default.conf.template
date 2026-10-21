@@ -4,9 +4,22 @@ fastcgi_cache_path /data/nginx/cache keys_zone=cached_badges:10m levels=1:2 max_
 log_format custom '$remote_addr - $remote_user [$time_local] '
                   '"$request" $status $body_bytes_sent '
                   '"$http_referer" "$http_user_agent" "$gzip_ratio" '
-                  'CACHE[$request_method-$scheme://$host$request_uri]:$skip_cache:$upstream_cache_status';
+                  'CACHE[$request_method@@$host@@$request_uri]:$skip_cache:$upstream_cache_status';
 
 init_by_lua_file '/etc/nginx/conf.d/lua/init.lua';
+
+map $host $skip_cache {
+    default 0;
+
+    # used for healthchecks
+    localhost 1;
+
+    # used for dev env
+    poser.local 1;
+
+    # used for staging env
+    stg.poser.pugx.org 1;
+}
 
 server {
     listen 80;
@@ -14,13 +27,10 @@ server {
 
     root /application/public;
 
-    set $skip_cache 0;
-    if ($request_method = POST) { set $skip_cache 1; }
-    if ($query_string != "") { set $skip_cache 1; }
-
     fastcgi_cache cached_badges;
-    fastcgi_cache_key "$request_method-$scheme://$host$request_uri";
-    fastcgi_cache_bypass $skip_cache;
+    fastcgi_cache_methods GET HEAD;
+    fastcgi_cache_key "$request_method@@$host@@$request_uri";
+    fastcgi_cache_bypass $is_args $skip_cache;
     fastcgi_no_cache $skip_cache;
     fastcgi_cache_min_uses 1; # generates cache for each obj
     fastcgi_cache_revalidate on;
@@ -54,6 +64,7 @@ server {
     add_header X-XSS-Protection "1; mode=block";
 
     location / {
+        # try to serve file directly, fallback to index.php
         try_files $uri /index.php$is_args$args;
     }
 
@@ -80,8 +91,6 @@ server {
     }
 
     location ~ ^/index\.php(/|$) {
-        internal;
-
         # local = phpfpm
         # aws = 127.0.0.1
         fastcgi_pass ${PHPFPM_HOST}:9000;
@@ -90,12 +99,20 @@ server {
         include fastcgi_params;
         fastcgi_buffers 16 16k;
         fastcgi_buffer_size 32k;
+
         fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
         fastcgi_param DOCUMENT_ROOT $realpath_root;
 
         access_by_lua_file '/etc/nginx/conf.d/lua/hook.lua';
+
+        # Prevents URIs that include the front controller. This will 404:
+        # http://domain.tld/index.php/some-path
+        # Remove the internal directive to allow URIs like this
+        internal;
     }
 
+    # return 404 for all other php files not matching the front controller
+    # this prevents access to other php files you don't want to be accessible.
     location ~ \.php$ {
         return 404;
     }

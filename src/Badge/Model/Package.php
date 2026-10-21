@@ -16,10 +16,9 @@ use Packagist\Api\Result\Package\Maintainer;
 use Packagist\Api\Result\Package\Version;
 
 /**
- * Class Package
  * Decorates the Packagist Package.
  */
-class Package
+final class Package
 {
     private static string $modifierRegex = '[._-]?(?:(stable|beta|b|RC|alpha|a|patch|pl|p)(?:[.-]?(\d+))?)?([.-]?dev)?';
     private ?string $license = null;
@@ -45,7 +44,7 @@ class Package
      *
      * @param array{default_branch: string} $repoGitHubData
      */
-    public static function createFromApi(ApiPackage $apiPackage, array $repoGitHubData): self
+    public static function createFromApi(ApiPackage $apiPackage, array $repoGitHubData = ['default_branch' => '']): self
     {
         return new self($apiPackage, $repoGitHubData);
     }
@@ -57,24 +56,24 @@ class Package
     {
         $statsType = 'get'.\ucfirst($type ?? 'total');
 
-        return $this->getDownloads()->{$statsType}();
+        return $this->getDownloads()?->{$statsType}();
     }
 
-    private function comparator(Version $version1, Version $version2): bool
+    private function comparator(Version $version1, Version $version2): int
     {
-        return $version1->getTime() > $version2->getTime();
+        return $version1->getTime() <=> $version2->getTime();
     }
 
     /**
      * Set the latest Stable and the latest Unstable version from a Package.
      */
-    private function calculateLatestVersions(): self
+    private function calculateLatestVersions(): void
     {
         $versions = $this->getVersions();
 
         \usort($versions, [$this, 'comparator']);
 
-        foreach ($versions as $name => $version) {
+        foreach ($versions as $version) {
             $currentVersionName = $version->getVersion();
             $versionNormalized = $version->getVersionNormalized();
 
@@ -88,17 +87,16 @@ class Package
                 $functionName = 'Stable';
             }
 
-            if (\version_compare($versionNormalized, $this->{'getLatest'.$functionName.'VersionNormalized'}()) > 0) {
+            $latestVersion = (string) $this->{'getLatest'.$functionName.'VersionNormalized'}();
+            if (\version_compare($versionNormalized, $latestVersion) > 0) {
                 $this->{'setLatest'.$functionName.'Version'}($currentVersionName);
                 $this->{'setLatest'.$functionName.'VersionNormalized'}($versionNormalized);
                 /** @var string|string[] $license */
-                $license = $version->getLicense();
+                $license = $version->getLicenses();
 
                 $this->setLicense($this->normalizeLicense($license));
             }
         }
-
-        return $this;
     }
 
     /**
@@ -109,7 +107,7 @@ class Package
     private function getBranchAliases(Version $version): ?array
     {
         $extra = $version->getExtra();
-        if (null !== $extra && isset($extra['branch-alias']) && \is_array($extra['branch-alias'])) {
+        if (isset($extra['branch-alias']) && \is_array($extra['branch-alias'])) {
             return $extra['branch-alias'];
         }
 
@@ -128,7 +126,7 @@ class Package
     {
         $version = \preg_replace('{#.+$}i', '', $version) ?? '';
 
-        if ('dev-' === \substr($version, 0, 4) || '-dev' === \substr($version, -4)) {
+        if (\str_starts_with($version, 'dev-') || \str_ends_with($version, '-dev')) {
             return 'dev';
         }
 
@@ -217,12 +215,12 @@ class Package
         return $this->getOriginalObject()->getDescription();
     }
 
-    public function getDownloads(): ApiPackage\Downloads
+    public function getDownloads(): ?ApiPackage\Downloads
     {
         return $this->getOriginalObject()->getDownloads();
     }
 
-    public function getFavers(): string
+    public function getFavers(): int
     {
         return $this->getOriginalObject()->getFavers();
     }
@@ -279,9 +277,9 @@ class Package
     }
 
     /**
-     * @param string|string[] $licenseData
+     * @param array<string>|string $licenseData
      */
-    private function normalizeLicense($licenseData): string
+    private function normalizeLicense(array|string $licenseData): string
     {
         if (!\is_array($licenseData)) {
             return $licenseData;
@@ -292,5 +290,19 @@ class Package
         }
 
         return '';
+    }
+
+    public function getLatestRequire(string $require): string
+    {
+        $latestStableVersion = $this->getLatestStableVersion();
+
+        if (null === $latestStableVersion) {
+            return '';
+        }
+
+        $version = $this->getVersions()[$latestStableVersion];
+        $requires = $version->getRequire();
+
+        return $requires[$require] ?? '';
     }
 }

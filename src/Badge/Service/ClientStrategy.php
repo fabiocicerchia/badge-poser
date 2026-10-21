@@ -7,24 +7,23 @@ namespace App\Badge\Service;
 use App\Badge\Exception\RepositoryDataNotValid;
 use App\Badge\Exception\SourceClientNotFound;
 use App\Badge\ValueObject\Repository;
+use App\Service\GitLabClientInterface;
 use Bitbucket\Client as BitbucketClient;
 use Github\Api\Repo;
 use Github\Client as GithubClient;
 use Http\Client\Exception;
 
-class ClientStrategy
+final class ClientStrategy
 {
-    private const GITHUB_REPOSITORY_PREFIX = 'blob';
-    private const BITBUCKET_REPOSITORY_PREFIX = 'src';
+    private const string GITHUB_REPOSITORY_PREFIX = 'blob';
+    private const string BITBUCKET_REPOSITORY_PREFIX = 'src';
+    private const string GITLAB_REPOSITORY_PREFIX = 'blob';
 
-    private GithubClient $githubClient;
-
-    private BitbucketClient $bitbucketClient;
-
-    public function __construct(GithubClient $githubClient, BitbucketClient $bitbucketClient)
-    {
-        $this->githubClient = $githubClient;
-        $this->bitbucketClient = $bitbucketClient;
+    public function __construct(
+        private readonly GithubClient $githubClient,
+        private readonly BitbucketClient $bitbucketClient,
+        private readonly GitLabClientInterface $gitlabClient,
+    ) {
     }
 
     /**
@@ -47,7 +46,7 @@ class ClientStrategy
             $repoApi = $this->githubClient->api('repo');
             $repoGitHubData = $repoApi->show($username, $repositoryName);
             if (!$this->isValidGithubRepository($repoGitHubData)) {
-                throw new RepositoryDataNotValid('Repository data not valid: '.(string) \json_encode($repoGitHubData));
+                throw new RepositoryDataNotValid('Repository data not valid: '.\json_encode($repoGitHubData));
             }
 
             $defaultBranch = (string) $repoGitHubData['default_branch'];
@@ -56,14 +55,23 @@ class ClientStrategy
         if ($repository->isBitbucket()) {
             $repoBitbucketData = $this->bitbucketClient
                 ->repositories()
-                ->users($username)
+                ->workspaces($username)
                 ->show($repositoryName);
 
             if (!$this->isValidBitbucketRepository($repoBitbucketData)) {
-                throw new RepositoryDataNotValid('Repository data not valid: '.(string) \json_encode($repoBitbucketData));
+                throw new RepositoryDataNotValid('Repository data not valid: '.\json_encode($repoBitbucketData));
             }
 
             $defaultBranch = (string) $repoBitbucketData['mainbranch']['name'];
+        }
+
+        if ($repository->isGitLab()) {
+            $repoGitLabData = $this->gitlabClient->show($repositoryName);
+            if (!$this->isValidGitLabRepository($repoGitLabData)) {
+                throw new RepositoryDataNotValid('Repository data not valid: '.\json_encode($repoGitLabData));
+            }
+
+            $defaultBranch = (string) $repoGitLabData['default_branch'];
         }
 
         return $defaultBranch;
@@ -91,11 +99,15 @@ class ClientStrategy
             $repositoryPrefixUrl .= '/'.self::BITBUCKET_REPOSITORY_PREFIX;
         }
 
+        if ($repository->isGitLab()) {
+            return $repoUrl.'/'.self::GITLAB_REPOSITORY_PREFIX;
+        }
+
         return $repositoryPrefixUrl;
     }
 
     /**
-     * @param mixed[] $repoGitHubData
+     * @param array<mixed> $repoGitHubData
      */
     private function isValidGithubRepository(array $repoGitHubData): bool
     {
@@ -105,7 +117,7 @@ class ClientStrategy
     }
 
     /**
-     * @param mixed[] $repoBitbucketData
+     * @param array<mixed> $repoBitbucketData
      */
     private function isValidBitbucketRepository(array $repoBitbucketData): bool
     {
@@ -113,5 +125,12 @@ class ClientStrategy
             && \array_key_exists('mainbranch', $repoBitbucketData)
             && \array_key_exists('name', $repoBitbucketData['mainbranch'])
             && \is_string($repoBitbucketData['mainbranch']['name']);
+    }
+
+    private function isValidGitLabRepository(array $repoGitLabData): bool
+    {
+        return !empty($repoGitLabData)
+            && \array_key_exists('default_branch', $repoGitLabData)
+            && \is_string($repoGitLabData['default_branch']);
     }
 }

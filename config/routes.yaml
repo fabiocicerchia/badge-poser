@@ -1,37 +1,24 @@
-home:
-    path: /
-    controller: App\Controller\HomeController::index
-    defaults:
-        repository: "phpunit/phpunit"
-
-show:
-    path: /show/{repository}
-    controller: App\Controller\HomeController::index
-    requirements:
-        repository: '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'
-
-snippet_all:
-    path: /snippet/all/
-    defaults: { _controller: 'App\Controller\SnippetController::all' }
+controllers:
+    resource: ../src/Controller/
+    type: attribute
 
 pugx_badge_packagist:
     path: /packages/{repository}
     host: "packagist.org"
     schemes:  [https]
     requirements:
-      repository: "[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"
-
-search_packagist:
-    path: /search_packagist
-    controller: App\Controller\PackagistController::search
-    methods:  [GET]
+        repository: "[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"
 
 # https://circleci.com/api/v1.1/project/github/PUGX/badge-poser?filter=completed&limit=1
 # https://circleci.com/api/v1.1/project/github/PUGX/badge-poser/tree/release%2Fv3.0.0?filter=completed&limit=1
-circleci_api:
+circleci_api_repository:
     path: /api/v1.1/project/github/{repository}/tree/{branch}
     host: "circleci.com"
     schemes:  [https]
     requirements:
         repository: "[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"
         branch: ".+"
+circleci_api_health:
+    path: /api/v2/me
+    host: "circleci.com"
+    schemes:  [https]

@@ -1,0 +1,105 @@
+# keeping stale data for max 25h, based on the current s-maxage of 24h we allow max 1h of stale contents being served while updating/not available.
+fastcgi_cache_path /data/nginx/cache keys_zone=cached_badges:10m levels=1:2 max_size=500m inactive=25h use_temp_path=off;
+
+log_format custom '$remote_addr - $remote_user [$time_local] '
+                  '"$request" $status $body_bytes_sent '
+                  '"$http_referer" "$http_user_agent" "$gzip_ratio" '
+                  'CACHE[$request_method@@$host@@$request_uri]:$skip_cache:$upstream_cache_status';
+
+
+map $host $skip_cache {
+    default 0;
+
+    # used for healthchecks
+    localhost 1;
+
+    # used for dev env
+    poser.local 1;
+
+    # used for staging env
+    stg.poser.pugx.org 1;
+}
+
+server {
+    listen 80;
+    server_name poser.pugx.org poser.packagist.org poser.local stg.poser.pugx.org;
+
+    return https://$host;
+}
+
+server {
+    listen 443 ssl;
+    server_name poser.pugx.org poser.packagist.org poser.local stg.poser.pugx.org;
+
+    ssl_certificate /application/sys/nginx/certs/server.pem;
+    ssl_certificate_key /application/sys/nginx/certs/server.key;
+
+    root /application/public;
+
+    fastcgi_cache cached_badges;
+    fastcgi_cache_methods GET HEAD;
+    fastcgi_cache_key "$request_method@@$host@@$request_uri";
+    fastcgi_cache_bypass $is_args $skip_cache;
+    fastcgi_no_cache $skip_cache;
+    fastcgi_cache_min_uses 1; # generates cache for each obj
+    fastcgi_cache_revalidate on;
+    fastcgi_cache_background_update on; # serve a STALE while refreshing content, next req will be HIT
+    fastcgi_cache_use_stale updating error timeout invalid_header http_500 http_503; # when "updating" serves a STALE resp
+    fastcgi_cache_valid 200 3600s;
+    add_header X-FastCGI-Cache $upstream_cache_status;
+
+    gzip on;
+    gzip_vary on;
+    gzip_proxied expired no-cache no-store private auth;
+    gzip_types text/plain text/css text/xml text/javascript application/javascript application/x-javascript application/xml;
+
+    location ~* \.(ico|css|js)$ {
+        expires 365d;
+    }
+
+    # local = 127.0.0.11
+    # aws = 169.254.169.253
+    resolver_timeout 2s;
+
+    access_log /var/log/nginx/application_access.log;
+    error_log /var/log/nginx/application_error.log;
+
+    add_header Access-Control-Allow-Origin *;
+
+    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload";
+    add_header X-Content-Type-Options nosniff;
+    add_header X-Frame-Options SAMEORIGIN;
+    add_header X-XSS-Protection "1; mode=block";
+
+    location / {
+        # try to serve file directly, fallback to index.php
+        try_files $uri /index.php$is_args$args;
+    }
+
+
+    location ~ ^/index\.php(/|$) {
+        # local = phpfpm
+        # aws = 127.0.0.1
+        fastcgi_pass phpfpm:9000;
+
+        fastcgi_split_path_info ^(.+\.php)(/.*)$;
+        include fastcgi_params;
+        fastcgi_buffers 16 16k;
+        fastcgi_buffer_size 32k;
+
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        fastcgi_param DOCUMENT_ROOT $realpath_root;
+
+
+        # Prevents URIs that include the front controller. This will 404:
+        # http://domain.tld/index.php/some-path
+        # Remove the internal directive to allow URIs like this
+        internal;
+    }
+
+    # return 404 for all other php files not matching the front controller
+    # this prevents access to other php files you don't want to be accessible.
+    location ~ \.php$ {
+        return 404;
+    }
+}

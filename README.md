@@ -3,9 +3,10 @@
 Use shields for your packagist.org repository that shows how many times your project has been downloaded from packagist.org
 or its latest stable version.
 
-[![CircleCI](https://circleci.com/gh/PUGX/badge-poser.svg?style=svg)](https://circleci.com/gh/PUGX/badge-poser)
+[![Github actions Build](https://github.com/PUGX/badge-poser/workflows/Test/badge.svg)](https://packagist.org/packages/PUGX/badge-poser)
 [![Latest Stable Version](https://poser.pugx.org/pugx/badge-poser/version.svg)](https://packagist.org/packages/pugx/badge-poser)
 [![Latest Unstable Version](https://poser.pugx.org/pugx/badge-poser/v/unstable.svg)](https://packagist.org/packages/pugx/badge-poser)
+[![PHP Version Require](https://poser.pugx.org/pugx/badge-poser/require/php)](https://packagist.org/packages/pugx/badge-poser)
 [![License](https://poser.pugx.org/pugx/badge-poser/license.svg)](https://packagist.org/packages/pugx/badge-poser)
 [![Downloads](https://poser.pugx.org/pugx/badge-poser/d/total.svg)](https://packagist.org/packages/pugx/badge-poser)
 [![composer.lock available](https://poser.pugx.org/pugx/badge-poser/composerlock)](https://packagist.org/packages/pugx/badge-poser)
@@ -25,7 +26,7 @@ Not only because all the other languages already have it, but having the latest 
 
 ## Contributing
 
-Active contribution and patches are very welcome.  
+Active contribution and patches are very welcome.
 Please refer to [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## License

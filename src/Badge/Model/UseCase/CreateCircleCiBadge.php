@@ -11,49 +11,46 @@
 
 namespace App\Badge\Model\UseCase;
 
+use App\Badge\Model\Badge;
 use App\Badge\Model\CacheableBadge;
 use App\Badge\Model\Package;
 use App\Badge\Model\PackageRepositoryInterface;
 use App\Service\CircleCiClientInterface;
-use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\Response;
-use Throwable;
-use UnexpectedValueException;
 
 /**
- * Class CreateCircleCiBadge
  * Create the 'CircleCi' image using a generator `Poser`.
  */
-class CreateCircleCiBadge extends BaseCreatePackagistImage
+final class CreateCircleCiBadge extends BaseCreatePackagistImage
 {
-    private const COLOR_PASSING = '42BD1B';
-    private const COLOR_FAILING = 'D75B48';
-    private const TEXT_PASSING = 'passing';
-    private const TEXT_FAILING = 'failing';
-    private const SUBJECT = 'build';
+    private const string COLOR_PASSING = '42BD1B';
+    private const string COLOR_FAILING = 'D75B48';
+    private const string TEXT_PASSING = 'passing';
+    private const string TEXT_FAILING = 'failing';
+    private const string SUBJECT = 'build';
 
-    private const TTL_DEFAULT_MAXAGE = CacheableBadge::TTL_ONE_HOUR;
-    private const TTL_DEFAULT_SMAXAGE = CacheableBadge::TTL_ONE_HOUR;
+    private const int TTL_DEFAULT_MAXAGE = CacheableBadge::TTL_ONE_HOUR;
+    private const int TTL_DEFAULT_SMAXAGE = CacheableBadge::TTL_ONE_HOUR;
 
     protected string $text = self::SUBJECT;
 
-    protected CircleCiClientInterface $circleCiClient;
-
-    public function __construct(PackageRepositoryInterface $packageRepository, CircleCiClientInterface $circleCiClient)
+    public function __construct(PackageRepositoryInterface $packageRepository, protected CircleCiClientInterface $circleCiClient)
     {
         parent::__construct($packageRepository);
-        $this->circleCiClient = $circleCiClient;
     }
 
     /**
-     * @throws InvalidArgumentException
-     * @throws UnexpectedValueException
+     * @throws \InvalidArgumentException
+     * @throws \UnexpectedValueException
      */
-    public function createCircleCiBadge(string $repository, string $branch = 'master', string $format = 'svg'): CacheableBadge
+    public function createCircleCiBadge(string $repository, string $branch = 'master', string $format = Badge::DEFAULT_FORMAT, string $style = Badge::DEFAULT_STYLE): CacheableBadge
     {
         try {
-            //check if the repo exist
-            \str_replace('.git', '', $this->packageRepository
+            // check if the repo exist
+            \str_replace(
+                '.git',
+                '',
+                $this->packageRepository
                 ->fetchByRepository($repository)
                 ->getRepository()
             );
@@ -61,16 +58,16 @@ class CreateCircleCiBadge extends BaseCreatePackagistImage
             $response = $this->circleCiClient->getBuilds($repository, $branch);
 
             if (Response::HTTP_OK !== $response->getStatusCode()) {
-                return $this->createDefaultBadge($format);
+                return $this->createDefaultBadge($format, $style);
             }
 
-            $builds = \json_decode($response->getContent(), true);
-        } catch (Throwable $e) {
-            return $this->createDefaultBadge($format);
+            $builds = \json_decode($response->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        } catch (\Throwable) {
+            return $this->createDefaultBadge($format, $style);
         }
 
         if (\count($builds) < 1) {
-            return $this->createDefaultBadge($format);
+            return $this->createDefaultBadge($format, $style);
         }
 
         $build = \current($builds);
@@ -88,6 +85,7 @@ class CreateCircleCiBadge extends BaseCreatePackagistImage
             self::SUBJECT,
             $color,
             $format,
+            $style,
             null,
             self::TTL_DEFAULT_MAXAGE,
             self::TTL_DEFAULT_SMAXAGE

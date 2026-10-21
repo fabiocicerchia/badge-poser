@@ -4,27 +4,31 @@ namespace App\Badge\Service;
 
 use App\Badge\Model\BadgeInterface;
 use App\Badge\Model\Image;
+use App\Event\BadgeEvent;
 use PUGX\Poser\Poser;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Class ImageFactory.
  */
-class ImageFactory
+final readonly class ImageFactory
 {
-    private Poser $generator;
-
-    public function __construct(Poser $generator)
-    {
-        $this->generator = $generator;
+    public function __construct(
+        private Poser $generator,
+        private EventDispatcherInterface $eventDispatcher,
+    ) {
     }
 
     public function createFromBadge(BadgeInterface $badge): Image
     {
+        $badgeEvent = new BadgeEvent($badge);
+        $this->eventDispatcher->dispatch($badgeEvent);
+
         $content = $this->generator->generate(
             $badge->getSubject(),
             $badge->getStatus(),
             \trim($badge->getHexColor(), '#'),
-            \PUGX\Poser\Badge::DEFAULT_STYLE,
+            $badge->getStyle(),
             $badge->getFormat()
         );
 

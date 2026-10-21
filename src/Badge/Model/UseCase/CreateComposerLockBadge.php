@@ -11,6 +11,7 @@
 
 namespace App\Badge\Model\UseCase;
 
+use App\Badge\Model\Badge;
 use App\Badge\Model\CacheableBadge;
 use App\Badge\Model\Package;
 use App\Badge\Model\PackageRepositoryInterface;
@@ -18,58 +19,48 @@ use App\Badge\Service\ClientStrategy;
 use App\Badge\ValueObject\Repository;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\RequestOptions;
-use InvalidArgumentException;
-use UnexpectedValueException;
 
 /**
- * Class CreateComposerLockBadge
  * Create the 'license' image using a generator `Poser`.
  */
-class CreateComposerLockBadge extends BaseCreatePackagistImage
+final class CreateComposerLockBadge extends BaseCreatePackagistImage
 {
-    private const COLOR_COMMITTED = 'e60073';
-    private const COLOR_UNCOMMITTED = '99004d';
-    private const COLOR_ERROR = 'aa0000';
-    private const LOCK_COMMITTED = 'committed';
-    private const LOCK_UNCOMMITTED = 'uncommitted';
-    private const LOCK_ERROR = 'checking';
-    private const SUBJECT = '.lock';
-    private const SUBJECT_ERROR = 'Error';
-    private const TIMEOUT_SECONDS = 8;
-    private const CONNECT_TIMEOUT_SECONDS = 5;
+    private const string COLOR_COMMITTED = 'e60073';
+    private const string COLOR_UNCOMMITTED = '99004d';
+    private const string COLOR_ERROR = 'aa0000';
+    private const string LOCK_COMMITTED = 'committed';
+    private const string LOCK_UNCOMMITTED = 'uncommitted';
+    private const string LOCK_ERROR = 'checking';
+    private const string SUBJECT = '.lock';
+    private const string SUBJECT_ERROR = 'Error';
+    private const int TIMEOUT_SECONDS = 8;
+    private const int CONNECT_TIMEOUT_SECONDS = 5;
 
-    private const TTL_DEFAULT_MAXAGE = CacheableBadge::TTL_ONE_HOUR;
-    private const TTL_DEFAULT_SMAXAGE = CacheableBadge::TTL_ONE_HOUR;
+    private const int TTL_DEFAULT_MAXAGE = CacheableBadge::TTL_ONE_HOUR;
+    private const int TTL_DEFAULT_SMAXAGE = CacheableBadge::TTL_ONE_HOUR;
 
     protected string $text = self::LOCK_ERROR;
 
-    protected ClientInterface $client;
-
-    private ClientStrategy $clientStrategy;
-
     public function __construct(
         PackageRepositoryInterface $packageRepository,
-        ClientInterface $client,
-        ClientStrategy $clientStrategy
+        protected ClientInterface $client,
+        private readonly ClientStrategy $clientStrategy,
     ) {
         parent::__construct($packageRepository);
-        $this->client = $client;
-        $this->clientStrategy = $clientStrategy;
     }
 
     /**
-     * @throws InvalidArgumentException
-     * @throws UnexpectedValueException
+     * @throws \InvalidArgumentException
+     * @throws \UnexpectedValueException
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function createComposerLockBadge(string $repository, string $format = 'svg'): CacheableBadge
+    public function createComposerLockBadge(string $repository, string $format = Badge::DEFAULT_FORMAT, string $style = Badge::DEFAULT_STYLE): CacheableBadge
     {
         try {
-            /** @var Package $package */
             $package = $this->fetchPackage($repository);
             $repo = \str_replace('.git', '', $package->getRepository());
-        } catch (\Exception $e) {
-            return $this->createDefaultBadge($format);
+        } catch (\Exception) {
+            return $this->createDefaultBadge($format, $style);
         }
 
         $repositoryInfo = Repository::createFromRepositoryUrl($repo);
@@ -108,6 +99,7 @@ class CreateComposerLockBadge extends BaseCreatePackagistImage
             $subject,
             $color,
             $format,
+            $style,
             null,
             self::TTL_DEFAULT_MAXAGE,
             self::TTL_DEFAULT_SMAXAGE

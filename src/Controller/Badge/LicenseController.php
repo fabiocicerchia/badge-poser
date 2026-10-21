@@ -11,6 +11,7 @@
 
 namespace App\Controller\Badge;
 
+use App\Badge\Model\Badge;
 use App\Badge\Model\UseCase\CreateLicenseBadge;
 use App\Badge\Service\ImageFactory;
 use PUGX\Poser\Poser;
@@ -18,17 +19,11 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Class LicenseController
  * License action for badges.
  */
-class LicenseController extends AbstractBadgeController
+final class LicenseController extends AbstractBadgeController
 {
     /**
-     * License action.
-     *
-     * @param string $repository repository
-     * @param string $format
-     *
      * @throws \InvalidArgumentException
      */
     public function license(
@@ -36,16 +31,15 @@ class LicenseController extends AbstractBadgeController
         Poser $poser,
         CreateLicenseBadge $createLicenseBadge,
         ImageFactory $imageFactory,
-        $repository,
-        $format = 'svg'
+        string $repository,
+        string $format = Badge::DEFAULT_FORMAT,
+        string $style = Badge::DEFAULT_STYLE,
     ): Response {
-        if (\in_array($request->query->get('format'), $poser->validStyles(), true)) {
-            $format = $request->query->get('format');
-        }
+        $style = $this->checkStyle($request, $poser, $style);
 
         return $this->serveBadge(
             $imageFactory,
-            $createLicenseBadge->createLicenseBadge($repository, $format)
+            $createLicenseBadge->createLicenseBadge($repository, $format, $style),
         );
     }
 }
