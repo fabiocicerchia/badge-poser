@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "badges/poser",
-            "version": "v3.3.0",
+            "version": "v3.5.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/badges/poser.git",
-                "reference": "f6f448e27bc676601ffcb9b378e6ce29edeb77a5"
+                "reference": "533211a3599bf8809b7efb5f41d1e7ef7099e776"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/badges/poser/zipball/f6f448e27bc676601ffcb9b378e6ce29edeb77a5",
-                "reference": "f6f448e27bc676601ffcb9b378e6ce29edeb77a5",
+                "url": "https://api.github.com/repos/badges/poser/zipball/533211a3599bf8809b7efb5f41d1e7ef7099e776",
+                "reference": "533211a3599bf8809b7efb5f41d1e7ef7099e776",
                 "shasum": ""
             },
             "require": {
@@ -25,14 +25,14 @@
                 "ext-gd": "*",
                 "ext-simplexml": "*",
                 "kartsims/easysvg": "^2.5",
-                "php": "^8.1",
+                "php": "^8.2",
                 "symfony/console": "^5.0 || ^6.0 || ^7.0 || ^8.0"
             },
             "require-dev": {
-                "behat/behat": "^3.13",
-                "friendsofphp/php-cs-fixer": "^3.41",
-                "phpunit/phpunit": "^10.5 | ^11.5 | ^12.0",
-                "vimeo/psalm": "^6.13"
+                "behat/behat": "^3.29 || ^4.0",
+                "friendsofphp/php-cs-fixer": "^3.95",
+                "phpunit/phpunit": "^11.5 || ^12.5 || ^13.4",
+                "vimeo/psalm": "^6.20 || ^7.0"
             },
             "bin": [
                 "bin/poser"
@@ -76,7 +76,7 @@
             ],
             "support": {
                 "issues": "https://github.com/badges/poser/issues",
-                "source": "https://github.com/badges/poser/tree/v3.3.0"
+                "source": "https://github.com/badges/poser/tree/v3.5.0"
             },
             "funding": [
                 {
@@ -92,7 +92,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-12-09T14:49:08+00:00"
+            "time": "2026-11-14T18:20:17+00:00"
         },
         {
             "name": "bitbucket/client",
